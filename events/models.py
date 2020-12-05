@@ -1,5 +1,7 @@
 from django.db import models
 
+from requirements.models import Requirements
+
 
 class Places(models.Model):
     name = models.CharField(max_length=64)
@@ -10,8 +12,9 @@ class Events(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
     limitOfParticipants = models.IntegerField()
-    price = models.DecimalField()
+    price = models.DecimalField(null=True)
     place = models.ForeignKey(Places, on_delete=models.CASCADE)
+    requirements = models.OneToOneField(Requirements, on_delete=models.CASCADE, null=True)
 
 
 class Tickets(models.Model):
