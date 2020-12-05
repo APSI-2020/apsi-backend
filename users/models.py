@@ -2,12 +2,6 @@ from django.db import models
 from enum import Enum
 
 
-class UserType(Enum):
-    STUDENT = "STUDENT"
-    LECTURER = "LECTURER"
-    GUEST = "GUEST"
-
-
 class AcademicTitle(Enum):
     lic = "lic."
     inz = "inż."
@@ -22,8 +16,7 @@ class AcademicTitle(Enum):
 
 
 class UsersTypes(models.Model):
-    name = models.CharField(max_length=32,
-                            choices=[(tag, tag.value) for tag in UserType])
+    name = models.CharField(max_length=32)
 
 
 class UsersGroups(models.Model):
