@@ -18,8 +18,8 @@ That means that he has to be in specific user groups.
 #### Possible schemas
 * User belongs to any of specified groups and takes APSI or BEST course
 ``
-[     <br/>
-  {  \
+[\
+  {
     "type": "BELONGS_TO_ANY_OF",  \
     "groups": ['Bachelor Students', 'Master Students']  \
   },  \
