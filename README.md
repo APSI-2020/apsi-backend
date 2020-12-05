@@ -16,7 +16,8 @@ That means that he has to be in specific user groups.
 
 
 #### Possible schemas
-* User belongs to any of:
+* User belongs to any of specified groups and takes APSI or BEST course
+``
 [
   {
     "type": "BELONGS_TO_ANY_OF",
@@ -24,11 +25,12 @@ That means that he has to be in specific user groups.
   },
   {
     "type": "TAKES_ANY_OF",
-    "courses": ['APSI']
+    "courses": ['APSI', 'BEST']
   }
 ]
-
-* User does not belong to any of
+``
+* User does not belong to any of those groups and does not take APSI and BEST courses
+``
 [
   {
     "type": "DOES_NOT_BELONG_TO_ANY_OF",
@@ -39,8 +41,9 @@ That means that he has to be in specific user groups.
     "groups": ['APSI', 'BEST']
   }
 ]
-
-* User belongs to execatly those groups:
+``
+* User belongs to execatly those groups and take both APSI and BEST courses
+``
 [
   {
     "type": "BELONGS_EXACTLY_TO",
@@ -51,3 +54,4 @@ That means that he has to be in specific user groups.
     "groups": ['APSI', 'BEST']
   }
 ]
+``
