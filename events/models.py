@@ -1,6 +1,7 @@
 from django.db import models
 
 from requirements.models import Requirements
+from users.models import Users
 
 
 class Places(models.Model):
@@ -14,7 +15,10 @@ class Events(models.Model):
     limitOfParticipants = models.IntegerField()
     price = models.DecimalField(null=True, decimal_places=2, max_digits=6)
     place = models.ForeignKey(Places, on_delete=models.CASCADE)
+
     requirements = models.OneToOneField(Requirements, on_delete=models.CASCADE, null=True)
+    lecturers = models.ManyToManyField(Users, related_name='hosted_events')
+    participants = models.ManyToManyField(Users, related_name='events')
 
 
 class Tickets(models.Model):
