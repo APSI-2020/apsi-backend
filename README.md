@@ -21,7 +21,7 @@ That means that he has to be in specific user groups.
 [
   {
     "type": "BELONGS_TO_ANY_OF",
-    "groups": ['Bachelor Students', 'Master Students']
+    "groups": ['Bachelor Students', 'Master Students', 'APSI']
   }
 ]
 ```
