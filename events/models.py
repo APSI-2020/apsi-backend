@@ -10,9 +10,11 @@ class Places(models.Model):
 
 
 class Events(models.Model):
+    name = models.CharField(max_length=64)
     start = models.DateTimeField()
     end = models.DateTimeField()
-    limitOfParticipants = models.IntegerField()
+    limit_of_participants = models.IntegerField()
+    number_of_participants = models.IntegerField()
     price = models.DecimalField(null=True, decimal_places=2, max_digits=6)
     place = models.ForeignKey(Places, on_delete=models.CASCADE)
 
