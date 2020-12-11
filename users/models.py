@@ -1,5 +1,8 @@
 from django.db import models
 from enum import Enum
+from django.contrib.auth.models import AbstractUser
+from django.utils.translation import ugettext_lazy as _
+from .managers import UsersManager
 
 
 class AcademicTitle(Enum):
@@ -23,12 +26,21 @@ class UsersGroups(models.Model):
     name = models.CharField(max_length=64)
 
 
-class Users(models.Model):
+class Users(AbstractUser):
+    username = None
+    last_login = None
+    date_joined = None
+
     first_name = models.CharField(max_length=64)
     last_name = models.CharField(max_length=64)
-    email = models.CharField(max_length=128)
+    email = models.EmailField(_('email address'), unique=True)
+
     title = models.CharField(max_length=32,
                              choices=[(tag, tag.value) for tag in AcademicTitle], null=True)
-    password_hash = models.CharField(max_length=64)
     groups = models.ManyToManyField(UsersGroups)
     types = models.ManyToManyField(UsersTypes)
+
+    objects = UsersManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
