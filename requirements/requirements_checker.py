@@ -9,7 +9,7 @@ class RequirementsChecker:
     def check(self, user):
         user_groups = list(map(lambda user: user.name, user.groups.all()))
         checks = set([self.check_single_requirement(requirement, user_groups) for requirement in self.requirements])
-        return True in checks and False not in checks
+        return len(self.requirements) == 0 or True in checks and False not in checks
 
     def check_single_requirement(self, requirement, user_groups):
         if requirement['type'] == 'BELONGS_TO_ANY_OF':

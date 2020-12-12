@@ -1,5 +1,5 @@
-from django.urls import path, include
+from django.urls import path
 from .views import *
 urlpatterns = [
-    path('', get_events),
+    path('events', Events.as_view(), name="get_events"),
 ]
