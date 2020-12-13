@@ -11,7 +11,7 @@ class EventsRepository:
         pass
 
     def find_events_for_given_with_respect_to_filters(self, request):
-        filters = dict(request.GET)
+        filters = dict(request.request.GET)
         query = Events.objects
         date_from = filters.get('date_from', None)
         date_to = filters.get('date_to', None)
@@ -39,17 +39,14 @@ class EventsRepository:
         if tags:
             query = query.filter(tags__in=tags[0])
 
-        if past_events is not None:
-            if past_events is True:
-                now = datetime.now()
-                date_filter = Q(start__date__lte=now)
-                time_filter = Q(start__time__lte=now)
-                query = query.filter(date_filter & time_filter)
+        if past_events is True:
+            now = datetime.now()
+            date_filter = Q(start__date__lte=now)
+            time_filter = Q(start__time__lte=now)
+            query = query.filter(date_filter & time_filter)
 
         if price is not None:
             query = query.filter(price__lte=float(price[0]))
-        else:
-            query = query.filter(price__isnull=True)
 
         if place:
             query = query.filter(place__name__icontains=place[0])

@@ -3,6 +3,7 @@ from enum import Enum
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from .managers import UsersManager
 
 
 class AcademicTitle(Enum):
@@ -28,7 +29,6 @@ class UsersGroups(models.Model):
 
 class Users(AbstractUser):
     username = None
-    is_staff = None
     last_login = None
     date_joined = None
 
@@ -40,6 +40,8 @@ class Users(AbstractUser):
                              choices=[(tag, tag.value) for tag in AcademicTitle], null=True)
     groups = models.ManyToManyField(UsersGroups)
     types = models.ManyToManyField(UsersTypes)
+
+    objects = UsersManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

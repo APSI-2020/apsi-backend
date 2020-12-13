@@ -21,11 +21,7 @@ That means that he has to be in specific user groups.
 [
   {
     "type": "BELONGS_TO_ANY_OF",
-    "groups": ['Bachelor Students', 'Master Students']
-  },
-  {
-    "type": "TAKES_ANY_OF",
-    "courses": ['APSI', 'BEST']
+    "groups": ['Bachelor Students', 'Master Students', 'APSI']
   }
 ]
 ```
@@ -35,10 +31,6 @@ That means that he has to be in specific user groups.
   {
     "type": "DOES_NOT_BELONG_TO_ANY_OF",
     "groups": ['Bachelor Students', 'Master Students']
-  },
-  {
-    "type": "DOES_NOT_TAKE_ANY_OF",
-    "groups": ['APSI', 'BEST']
   }
 ]
 ```
@@ -48,10 +40,6 @@ That means that he has to be in specific user groups.
   {
     "type": "BELONGS_EXACTLY_TO",
     "groups": ['Guests', 'Lecturers']
-  },
-  {
-    "type": "TAKES_EXACTLY_THOSE",
-    "groups": ['APSI', 'BEST']
   }
 ]
 ```
