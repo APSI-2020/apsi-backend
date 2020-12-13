@@ -1,1 +1,5 @@
 Django==3.1.4
+djangorestframework~=3.12.2
+djangorestframework-simplejwt
+PyJWT~=1.7.1
+drf-yasg
