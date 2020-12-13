@@ -1,15 +1,21 @@
+import json
+
 from rest_framework import serializers
 
 from events.models import Events, Places
 from requirements.models import Requirements
 from requirements.serializers import CreateRequirementsSerializer
 from users.serializers import UserSerializer
-import json
 
 
 def user_signed_up_for_event(event, user_id):
     users_ids = list(map(lambda participant: participant.pk, event.participants.all()))
     return user_id in users_ids
+
+
+def user_is_lecturer_in_event(event, user_id):
+    lecturers_ids = list(map(lambda lecturer: lecturer.pk, event.lecturers.all()))
+    return user_id in lecturers_ids
 
 
 class PlaceSerializer(serializers.ModelSerializer):
@@ -41,6 +47,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk')
     is_signed_up_for = serializers.SerializerMethodField('get_signed_up_for')
+    is_lecturer = serializers.SerializerMethodField('get_lecturer_in')
     amount_of_participants = serializers.IntegerField(source='number_of_participants')
     lecturers = UserSerializer(many=True)
     place = PlaceSerializer()
@@ -48,8 +55,11 @@ class EventSerializer(serializers.ModelSerializer):
     def get_signed_up_for(self, event):
         return user_signed_up_for_event(event, self.context['user'].pk)
 
+    def get_lecturer_in(self, event):
+        return user_is_lecturer_in_event(event, self.context['user'].pk)
+
     class Meta:
         model = Events
         fields = (
-        'id', 'name', 'is_signed_up_for', 'amount_of_participants', 'start', 'end', 'limit_of_participants', 'price',
-        'place', 'lecturers')
+            'id', 'name', 'is_signed_up_for', 'is_lecturer', 'amount_of_participants', 'start', 'end',
+            'limit_of_participants', 'price', 'place', 'lecturers')

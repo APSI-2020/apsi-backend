@@ -1,11 +1,11 @@
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, permissions
+from rest_framework.authentication import get_authorization_header
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.authentication import get_authorization_header
-from drf_yasg.utils import swagger_auto_schema
 
-from .users_service import UsersService
 from .serializers import UserSerializer
+from .users_service import UsersService
 
 
 class UserCreate(APIView):

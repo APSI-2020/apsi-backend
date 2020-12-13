@@ -53,6 +53,10 @@ class EventsRepository:
 
         return query.all()
 
+    def get_event_by_id(self, event_id):
+        event = Events.objects.get(id=event_id)
+        return event
+
     def save(self, event_to_save):
         event_to_save.save()
         pass

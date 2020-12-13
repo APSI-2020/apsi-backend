@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework.views import APIView
 
 from events.events_repository import EventsRepository
@@ -49,7 +50,8 @@ class Events(APIView):
         response = serializer.data
         return JsonResponse(response, safe=False)
 
-    @swagger_auto_schema(request_body=CreateEventSerializer, operation_description='Endpoint for adding event.', manual_parameters=[authorization_token])
+    @swagger_auto_schema(request_body=CreateEventSerializer, operation_description='Endpoint for adding event.',
+                         manual_parameters=[authorization_token])
     def put(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
@@ -58,3 +60,26 @@ class Events(APIView):
             event_to_save = serializer.save()
             self.events_repository.save(event_to_save)
         return JsonResponse({jwt: jwt}, safe=False)
+
+
+class Event(APIView):
+    events_repository = EventsRepository()
+    users_service = UsersService()
+
+    event_response = openapi.Response('response description', EventSerializer(many=False))
+    authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
+                                            description="Authorization token which starts with Bearer",
+                                            type=openapi.TYPE_STRING)
+
+    @swagger_auto_schema(operation_description='Endpoint for retrieving single event given event id.',
+                         responses={200: event_response, 404: None},
+                         manual_parameters=[authorization_token])
+    def get(self, request, event_id):
+        jwt = request.headers['Authorization']
+        user = self.users_service.fetch_by_jwt(jwt)
+        event = self.events_repository.get_event_by_id(event_id)
+        if not does_user_meet_requirements(event, user):
+            return JsonResponse(data=None, status=status.HTTP_404_NOT_FOUND, safe=False)
+        serializer = EventSerializer(event, context=dict(user=user), many=False)
+        response = serializer.data
+        return JsonResponse(response, safe=False)
