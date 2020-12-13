@@ -52,3 +52,7 @@ class EventsRepository:
             query = query.filter(place__name__icontains=place[0])
 
         return query.all()
+
+    def save(self, event_to_save):
+        event_to_save.save()
+        pass

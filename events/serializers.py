@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
 from events.models import Events, Places
-from users.models import Users
+from requirements.models import Requirements
+from requirements.serializers import CreateRequirementsSerializer
 from users.serializers import UserSerializer
+import json
 
 
 def user_signed_up_for_event(event, user_id):
@@ -19,9 +21,21 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 
 class CreateEventSerializer(serializers.ModelSerializer):
+    requirements = CreateRequirementsSerializer(many=True)
+
     class Meta:
         model = Events
-        fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers')
+        fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers', 'requirements')
+
+    def create(self, validated_data):
+        requirements = validated_data.pop('requirements')
+        saved_requirements = Requirements.objects.create(requirement_json=json.dumps(requirements))
+        validated_data['requirements'] = saved_requirements
+        lecturers = validated_data.pop('lecturers')
+        instance = self.Meta.model(**validated_data)
+        instance.save()
+        instance.lecturers.add(*lecturers)
+        return instance
 
 
 class EventSerializer(serializers.ModelSerializer):
