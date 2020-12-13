@@ -13,7 +13,7 @@ class RequirementsChecker:
 
     def check_single_requirement(self, requirement, user_groups):
         if requirement['type'] == 'BELONGS_TO_ANY_OF':
-            return len(set(requirement['groups']) - set(user_groups)) < len(requirement[''].groups)
+            return len(set(requirement['groups']) - set(user_groups)) < len(requirement['groups'])
         elif requirement['type'] == 'DOES_NOT_BELONG_TO_ANY_OF':
             return len((set(user_groups) - set(requirement['groups']))) == 0
         elif requirement['type'] == 'BELONGS_EXACTLY_TO':

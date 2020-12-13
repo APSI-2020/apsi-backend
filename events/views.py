@@ -42,8 +42,7 @@ class Events(APIView):
                                             place])
     def get(self, request):
         jwt = request.headers['Authorization']
-        users_service = UsersService()
-        user = users_service.fetch_by_jwt(jwt)
+        user = self.users_service.fetch_by_jwt(jwt)
         events = self.events_repository.find_events_for_given_with_respect_to_filters(self)
         available_events = list(filter(lambda event: does_user_meet_requirements(event, user), events))
         serializer = EventSerializer(available_events, context=dict(user=user), many=True)
@@ -60,7 +59,6 @@ class Events(APIView):
             event_to_save = serializer.save()
             self.events_repository.save(event_to_save)
         return JsonResponse({jwt: jwt}, safe=False)
-
 
 class Event(APIView):
     events_repository = EventsRepository()
@@ -83,3 +81,5 @@ class Event(APIView):
         serializer = EventSerializer(event, context=dict(user=user), many=False)
         response = serializer.data
         return JsonResponse(response, safe=False)
+
+
