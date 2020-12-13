@@ -1,6 +1,6 @@
 from django.db import models
 
-from requirements.models import Requirements
+from requirements.models import Requirements, empty_requirements
 from users.models import Users
 
 
@@ -14,11 +14,11 @@ class Events(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
     limit_of_participants = models.IntegerField()
-    number_of_participants = models.IntegerField()
+    number_of_participants = models.IntegerField(default=0)
     price = models.DecimalField(null=True, decimal_places=2, max_digits=6)
     place = models.ForeignKey(Places, on_delete=models.CASCADE)
 
-    requirements = models.OneToOneField(Requirements, on_delete=models.CASCADE, null=True)
+    requirements = models.OneToOneField(Requirements, on_delete=models.CASCADE, null=False, default=empty_requirements())
     lecturers = models.ManyToManyField(Users, related_name='hosted_events')
     participants = models.ManyToManyField(Users, related_name='events')
 

@@ -56,4 +56,5 @@ class Events(APIView):
         serializer = CreateEventSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             event_to_save = serializer.save()
+            self.events_repository.save(event_to_save)
         return JsonResponse({jwt: jwt}, safe=False)
