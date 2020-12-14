@@ -5,9 +5,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from events.events_repository import EventsRepository
-from events.serializers import EventSerializer, CreateEventSerializer
+from events.serializers import EventSerializer, CreateEventSerializer, PlaceSerializer, CreatePlaceSerializer
 from requirements.requirements_checker import RequirementsChecker
 from users.users_service import UsersService
+from events.models import Places as ModelPlaces
 
 
 def does_user_meet_requirements(event, user):
@@ -86,8 +87,23 @@ class Event(APIView):
 
 
 class Places(APIView):
-    users_service = UsersService()
+    authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
+                                            description="Authorization token which starts with Bearer",
+                                            type=openapi.TYPE_STRING)
+
+    @swagger_auto_schema(operation_description='Endpoint for retrieving all places.',
+                         manual_parameters=[authorization_token])
     def get(self, request):
-        jwt = request.headers['Authorization']
-        user = self.users_service.fetch_by_jwt(jwt)
-        pass
+        serializer = PlaceSerializer(ModelPlaces.objects.all(), many=True)
+        response = serializer.data
+        return JsonResponse(response, safe=False)
+
+    @swagger_auto_schema(operation_description='Endpoint for creating place.',
+                         request_body=CreatePlaceSerializer,
+                         manual_parameters=[authorization_token])
+    def post(self, request):
+        serializer = CreatePlaceSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            place = serializer.save()
+            place.save()
+            return JsonResponse({'id': place.pk}, safe=False)
