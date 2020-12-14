@@ -59,4 +59,4 @@ class EventsRepository:
 
     def save(self, event_to_save):
         event_to_save.save()
-        pass
+        return event_to_save

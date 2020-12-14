@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -57,8 +57,10 @@ class Events(APIView):
         serializer = CreateEventSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             event_to_save = serializer.save()
-            self.events_repository.save(event_to_save)
-        return JsonResponse({jwt: jwt}, safe=False)
+            id = self.events_repository.save(event_to_save).pk
+            return JsonResponse({'id': id}, safe=False)
+        return HttpResponseBadRequest()
+
 
 class Event(APIView):
     events_repository = EventsRepository()
@@ -83,3 +85,9 @@ class Event(APIView):
         return JsonResponse(response, safe=False)
 
 
+class Places(APIView):
+    users_service = UsersService()
+    def get(self, request):
+        jwt = request.headers['Authorization']
+        user = self.users_service.fetch_by_jwt(jwt)
+        pass

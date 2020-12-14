@@ -18,6 +18,12 @@ def user_is_lecturer_in_event(event, user_id):
     return user_id in lecturers_ids
 
 
+class CreatePlaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Places
+        fields = ('name', 'address')
+
+
 class PlaceSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk')
 

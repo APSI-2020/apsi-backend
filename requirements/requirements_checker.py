@@ -3,6 +3,7 @@ from users.models import UsersGroups
 
 
 class RequirementsChecker:
+    ALL_TYPES = ['BELONGS_TO_ANY_OF', 'DOES_NOT_BELONG_TO_ANY_OF', 'BELONGS_EXACTLY_TO']
     def __init__(self, requirements):
         self.requirements = json.loads(requirements.requirement_json)
 
@@ -19,4 +20,4 @@ class RequirementsChecker:
         elif requirement['type'] == 'BELONGS_EXACTLY_TO':
             return len(set(requirement['groups']) - set(user_groups)) == 0
         else:
-            raise Exception('Requirement type not recognized')
+            raise RuntimeError('Requirement "' + requirement['type'] + '" type not recognized')
