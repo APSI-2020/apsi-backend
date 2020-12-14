@@ -3,7 +3,7 @@ import json
 from rest_framework import serializers
 
 from events.models import Events, Places
-from requirements.models import Requirements
+from requirements.models import Requirements, empty_requirements
 from requirements.serializers import CreateRequirementsSerializer
 from users.serializers import UserSerializer
 
@@ -33,7 +33,7 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 
 class CreateEventSerializer(serializers.ModelSerializer):
-    requirements = CreateRequirementsSerializer(many=True)
+    requirements = CreateRequirementsSerializer(many=True, default=[])
 
     class Meta:
         model = Events
