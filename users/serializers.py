@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Users
+
+from .models import Users, UsersGroups
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,3 +24,12 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class UserGroupSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    name = serializers.CharField(required=True)
+
+    class Meta:
+        model = UsersGroups
+        fields = ('id', 'name')
