@@ -14,3 +14,4 @@ class UsersService:
         user_id = decoded['user_id']
 
         return self.user_repository.find_by_id_or_fail(user_id)
+
