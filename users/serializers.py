@@ -1,3 +1,5 @@
+from django.db import IntegrityError
+from django.http import HttpResponseBadRequest
 from rest_framework import serializers
 
 from .models import Users, UsersGroups
@@ -22,7 +24,11 @@ class UserSerializer(serializers.ModelSerializer):
         instance = self.Meta.model(**validated_data)  # as long as the fields are the same, we can just use this
         if password is not None:
             instance.set_password(password)
-        instance.save()
+        try:
+            instance.save()
+        except IntegrityError:
+            return HttpResponseBadRequest('User with given email already exist.')
+
         return instance
 
 
