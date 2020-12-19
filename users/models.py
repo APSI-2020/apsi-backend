@@ -3,6 +3,7 @@ from enum import Enum
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+
 from .managers import UsersManager
 
 
@@ -22,9 +23,15 @@ class AcademicTitle(Enum):
 class UsersTypes(models.Model):
     name = models.CharField(max_length=32)
 
+    def __str__(self):
+        return self.name
+
 
 class UsersGroups(models.Model):
     name = models.CharField(max_length=64)
+
+    def __str__(self):
+        return self.name
 
 
 class Users(AbstractUser):

@@ -13,3 +13,6 @@ def empty_requirements():
 
 class Requirements(models.Model):
     requirement_json = models.TextField()
+
+    def __str__(self):
+        return self.requirement_json
