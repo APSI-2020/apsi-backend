@@ -1,4 +1,5 @@
-from django.http import JsonResponse
+from django.db import IntegrityError
+from django.http import JsonResponse, HttpResponseBadRequest
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, permissions
@@ -18,7 +19,10 @@ class UserCreate(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            try:
+                user = serializer.save()
+            except IntegrityError:
+                return HttpResponseBadRequest('User with given email already exist.')
             if user:
                 json = serializer.data
                 return Response(json, status=status.HTTP_201_CREATED)
