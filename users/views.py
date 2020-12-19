@@ -23,7 +23,7 @@ class UserCreate(APIView):
                 user = serializer.save()
             except IntegrityError:
                 return HttpResponseBadRequest('User with given email already exist.')
-        if user:
+            if user:
                 json = serializer.data
                 return Response(json, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
