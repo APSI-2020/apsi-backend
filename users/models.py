@@ -44,7 +44,7 @@ class Users(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
 
     title = models.CharField(max_length=32,
-                             choices=[(tag, tag.value) for tag in AcademicTitle], null=True)
+                             choices=[(tag.value, tag) for tag in AcademicTitle], null=True)
     groups = models.ManyToManyField(UsersGroups)
     types = models.ManyToManyField(UsersTypes)
 
