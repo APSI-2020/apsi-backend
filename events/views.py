@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -84,6 +84,38 @@ class Event(APIView):
         serializer = EventSerializer(event, context=dict(user=user), many=False)
         response = serializer.data
         return JsonResponse(response, safe=False)
+
+
+class JoinEvent(APIView):
+    events_repository = EventsRepository()
+    users_service = UsersService()
+
+    authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
+                                            description="Authorization token which starts with Bearer",
+                                            type=openapi.TYPE_STRING)
+
+    @swagger_auto_schema(operation_description='Endpoint for joining to event.',
+                         manual_parameters=[authorization_token])
+    def post(self, request, event_id):
+        jwt = request.headers['Authorization']
+        user = self.users_service.fetch_by_jwt(jwt)
+        event = self.events_repository.get_event_by_id(event_id)
+        serializer = EventSerializer(event, context=dict(user=user), many=False)
+        serialized_event = serializer.data
+
+        if serialized_event['limit_of_participants'] <= serialized_event['amount_of_participants']:
+            return JsonResponse(dict(error_message='Event is full.'), safe=False, status=400)
+
+        if serialized_event['is_signed_up_for']:
+            return JsonResponse(dict(error_message='User is already signed up for this event'), safe=False, status=400)
+
+        if does_user_meet_requirements(event, user):
+            event.number_of_participants = event.number_of_participants + 1
+            event.participants.add(user)
+            event.save()
+            return HttpResponse(status=status.HTTP_201_CREATED)
+
+        return JsonResponse(dict(error_message='User does not meet requirements'), safe=False, status=400)
 
 
 class Places(APIView):
