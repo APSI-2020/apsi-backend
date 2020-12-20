@@ -113,7 +113,7 @@ class JoinEvent(APIView):
             event.number_of_participants = event.number_of_participants + 1
             event.participants.add(user)
             event.save()
-            return HttpResponse(status=200)
+            return HttpResponse(status=status.HTTP_201_CREATED)
 
         return JsonResponse(dict(error_message='User does not meet requirements'), safe=False, status=400)
 
