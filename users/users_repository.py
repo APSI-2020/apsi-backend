@@ -15,6 +15,10 @@ class UsersGroupRepository:
     def get_all_users_groups():
         return UsersGroups.objects.all()
 
+    @staticmethod
+    def find_guest_user_group_or_fail():
+        return UsersGroups.objects.get(name='Guest')
+
 
 class LecturerRepository:
 
