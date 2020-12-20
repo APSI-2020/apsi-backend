@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponseBadRequest
 from drf_yasg import openapi
@@ -15,18 +16,32 @@ from .users_service import UsersService
 
 class UserCreate(APIView):
     permission_classes = (permissions.AllowAny,)
+    users_group_repository = UsersGroupRepository()
 
     @swagger_auto_schema(request_body=UserSerializer, operation_description='Endpoint for user registration.')
     def post(self, request):
         serializer = UserSerializer(data=request.data)
+
+        try:
+            guest_user_group = self.users_group_repository.find_guest_user_group_or_fail()
+        except ObjectDoesNotExist:
+            return JsonResponse(dict(error_message='Guest user group not found.'),
+                                safe=False,
+                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         if serializer.is_valid():
             try:
                 user = serializer.save()
+                user.groups.add(guest_user_group)
             except IntegrityError:
-                return JsonResponse(dict(error_message='User with given email already exist.'), safe=False, status=400)
+                return JsonResponse(dict(error_message='User with given email already exist.'),
+                                    safe=False,
+                                    status=status.HTTP_400_BAD_REQUEST)
+
             if user:
                 json = serializer.data
                 return Response(json, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
