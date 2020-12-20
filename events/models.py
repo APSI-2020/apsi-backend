@@ -1,12 +1,15 @@
 from django.db import models
 
-from requirements.models import Requirements, empty_requirements
+from requirements.models import Requirements
 from users.models import Users
 
 
 class Places(models.Model):
     name = models.CharField(max_length=64)
     address = models.CharField(max_length=256)
+
+    def __str__(self):
+        return self.name
 
 
 class Events(models.Model):
@@ -22,7 +25,13 @@ class Events(models.Model):
     lecturers = models.ManyToManyField(Users, related_name='hosted_events')
     participants = models.ManyToManyField(Users, related_name='events')
 
+    def __str__(self):
+        return self.name
+
 
 class Tickets(models.Model):
     qr_code_content = models.CharField(max_length=256)
     event = models.ForeignKey(Events, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.event
