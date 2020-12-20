@@ -14,3 +14,10 @@ class UsersGroupRepository:
     @staticmethod
     def get_all_users_groups():
         return UsersGroups.objects.all()
+
+
+class LecturerRepository:
+
+    @staticmethod
+    def get_all_lecturers():
+        return Users.objects.filter(types__name='Lecturer')

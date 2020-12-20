@@ -34,3 +34,14 @@ class UserGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = UsersGroups
         fields = ('id', 'name')
+
+
+class LecturerSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    email = serializers.EmailField(required=True)
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+
+    class Meta:
+        model = Users
+        fields = ('id', 'email', 'first_name', 'last_name', 'title')
