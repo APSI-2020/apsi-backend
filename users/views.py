@@ -30,14 +30,19 @@ class UserCreate(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class HelloWorldView(APIView):
+class CurrentUserView(APIView):
+    users_service = UsersService()
+
     def get(self, request):
-        us = UsersService()
         token = get_authorization_header(request).decode('utf-8')
 
-        user = us.fetch_by_jwt(token)
+        user = self.users_service.fetch_by_jwt(token)
 
-        return Response(data={"hello": user.first_name}, status=status.HTTP_200_OK)
+        serializer = UserSerializer(user)
+
+        json = serializer.data
+
+        return Response(json, status=status.HTTP_200_OK)
 
 
 class UserGroupsView(APIView):
