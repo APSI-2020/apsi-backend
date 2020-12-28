@@ -5,10 +5,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from events.events_repository import EventsRepository
+from events.models import Places as ModelPlaces
 from events.serializers import EventSerializer, CreateEventSerializer, PlaceSerializer, CreatePlaceSerializer
 from requirements.requirements_checker import RequirementsChecker
 from users.users_service import UsersService
-from events.models import Places as ModelPlaces
 
 
 def does_user_meet_requirements(event, user):
@@ -36,15 +36,18 @@ class Events(APIView):
                                     description="Returns also events that already ended", type=openapi.TYPE_STRING)
     place = openapi.Parameter('place', openapi.IN_QUERY, description="Returns events that are happening at given place",
                               type=openapi.TYPE_STRING)
+    user_signed_up = openapi.Parameter('user_signed_up', openapi.IN_QUERY,
+                                       description="Returns only those events that user is signed up for",
+                                       type=openapi.TYPE_BOOLEAN, default=False)
 
     @swagger_auto_schema(operation_description='Endpoint for retrieving filtered events.',
                          responses={200: events_response, 404: []},
                          manual_parameters=[authorization_token, price, date_from, date_to, name_contains, past_events,
-                                            place])
+                                            place, user_signed_up])
     def get(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
-        events = self.events_repository.find_events_for_given_with_respect_to_filters(self)
+        events = self.events_repository.find_events_for_given_with_respect_to_filters(self, user)
         available_events = list(filter(lambda event: does_user_meet_requirements(event, user), events))
         serializer = EventSerializer(available_events, context=dict(user=user), many=True)
         response = serializer.data
