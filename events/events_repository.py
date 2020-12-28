@@ -10,7 +10,7 @@ class EventsRepository:
     def __init__(self):
         pass
 
-    def find_events_for_given_with_respect_to_filters(self, request):
+    def find_events_for_given_with_respect_to_filters(self, request, user):
         filters = dict(request.request.GET)
         query = Events.objects
         date_from = filters.get('date_from', None)
@@ -20,6 +20,21 @@ class EventsRepository:
         past_events = filters.get('past_events', None)
         price = filters.get('price', None)
         place = filters.get('place', None)
+        user_signed_up = filters.get('user_signed_up', None)
+
+        if price is not None:
+            query = query.filter(price__lte=float(price[0]))
+
+        if place:
+            query = query.filter(place__name__icontains=place[0])
+
+        if name_contains:
+            query = query.filter(name__icontains=name_contains[0])
+
+        if user_signed_up is not None:
+            user_signed_up = user_signed_up[0] == 'true'
+            if user_signed_up:
+                query = query.filter(participants=user.id)
 
         if date_from:
             datetime_start = parse(date_from[0])
@@ -33,9 +48,6 @@ class EventsRepository:
             time_filter = Q(start__time__lte=datetime_end)
             query = query.filter(date_filter & time_filter)
 
-        if name_contains:
-            query = query.filter(name__icontains=name_contains[0])
-
         if tags:
             query = query.filter(tags__in=tags[0])
 
@@ -44,12 +56,6 @@ class EventsRepository:
             date_filter = Q(start__date__lte=now)
             time_filter = Q(start__time__lte=now)
             query = query.filter(date_filter & time_filter)
-
-        if price is not None:
-            query = query.filter(price__lte=float(price[0]))
-
-        if place:
-            query = query.filter(place__name__icontains=place[0])
 
         return query.all()
 
