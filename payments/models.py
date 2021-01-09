@@ -1,13 +1,15 @@
 from django.db import models
-from users.models import Users
+
 from events.models import Events
+from users.models import Users
+
 
 class Payments(models.Model):
-   date = models.DateTimeField()
-   price = models.DecimalField(null=True, decimal_places=2, max_digits=6)
+    timestamp = models.DateTimeField(null=False)
+    price = models.DecimalField(null=False, decimal_places=2, max_digits=6)
 
-   user = models.ForeignKey(Users, on_delete=models.CASCADE)
-   event = models.ForeignKey(Events, on_delete=models.CASCADE)
+    user = models.ForeignKey(Users, null=False, on_delete=models.CASCADE)
+    event = models.ForeignKey(Events, null=False, on_delete=models.CASCADE)
 
-   def __str__(self):
-       return f'User: {self.user} Event: {self.event}'
+    def __str__(self):
+        return f'User: {self.user} Event: {self.event}'
