@@ -11,5 +11,8 @@ class Payments(models.Model):
     user = models.ForeignKey(Users, null=False, on_delete=models.CASCADE)
     event = models.ForeignKey(Events, null=False, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('user', 'event',)
+
     def __str__(self):
         return f'User: {self.user} Event: {self.event}'

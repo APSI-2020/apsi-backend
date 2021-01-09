@@ -14,6 +14,5 @@ class CreatePaymentSerializer(serializers.ModelSerializer):
 
         instance = self.Meta.model(
             price=price, timestamp=timestamp, user=self.context['user'], event=self.context['event'])
-        instance.save()
 
         return instance
