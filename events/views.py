@@ -14,7 +14,6 @@ from users.users_service import UsersService
 def does_user_meet_requirements(event, user):
     return RequirementsChecker(event.requirements).check(user)
 
-
 class Events(APIView):
     events_repository = EventsRepository()
     users_service = UsersService()
