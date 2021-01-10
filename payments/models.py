@@ -5,7 +5,7 @@ from users.models import Users
 
 
 class Payments(models.Model):
-    timestamp = models.DateTimeField(null=False)
+    timestamp = models.DateTimeField(auto_now_add=True, null=False)
     price = models.DecimalField(null=False, decimal_places=2, max_digits=6)
 
     user = models.ForeignKey(Users, null=False, on_delete=models.CASCADE)
