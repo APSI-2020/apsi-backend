@@ -31,8 +31,6 @@ class Payments(APIView):
         jwt = request.headers['Authorization']
         event_id = request.data['event_id']
 
-        price = request.data['price']
-
         user = self.users_service.fetch_by_jwt(jwt)
         event = self.events_repository.get_event_by_id(event_id)
 
@@ -48,10 +46,7 @@ class Payments(APIView):
         if not event.participants.filter(id=user.id):
             return JsonResponse(data='User is not a participant', status=status.HTTP_403_FORBIDDEN, safe=False)
 
-        if float(price) < event.price:
-            return JsonResponse(data='Payment not sufficient', status=status.HTTP_406_NOT_ACCEPTABLE, safe=False)
-
-        serializer = CreatePaymentSerializer(data=request.data, context=dict(user=user, event=event))
+        serializer = CreatePaymentSerializer(data=request.data, context=dict(user=user, event=event, price=event.price))
 
         if serializer.is_valid(raise_exception=True):
             payment_to_save = serializer.save()

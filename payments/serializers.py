@@ -8,14 +8,13 @@ class CreatePaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payments
-        fields = ('timestamp', 'price', 'event_id')
+        fields = ('timestamp', 'event_id')
 
     def create(self, validated_data):
-        price = float(validated_data.pop('price'))
         timestamp = validated_data.pop('timestamp')
 
         instance = self.Meta.model(
-            price=price, timestamp=timestamp, user=self.context['user'], event=self.context['event'])
+            price=self.context['price'], timestamp=timestamp, user=self.context['user'], event=self.context['event'])
 
         return instance
 
