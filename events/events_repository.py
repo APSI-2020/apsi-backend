@@ -36,17 +36,23 @@ class EventsRepository:
             if user_signed_up:
                 query = query.filter(participants=user.id)
 
-        if date_from:
-            datetime_start = parse(date_from[0])
-            date_filter = Q(start__date__gte=datetime_start)
-            time_filter = Q(start__time__gte=datetime_start)
-            query = query.filter(date_filter & time_filter)
+        if date_from or date_to:
+            if date_from and date_to:
+                datetime_start = parse(date_from[0])
+                datetime_end = parse(date_to[0])
+                query = query.filter(start__gte=datetime_start, end__lte=datetime_end)
 
-        if date_to:
-            datetime_end = parse(date_to[0])
-            date_filter = Q(start__date__lte=datetime_end)
-            time_filter = Q(start__time__lte=datetime_end)
-            query = query.filter(date_filter & time_filter)
+            elif date_from:
+                datetime_start = parse(date_from[0])
+                date_filter = Q(start__date__gte=datetime_start)
+                time_filter = Q(start__time__gte=datetime_start)
+                query = query.filter(date_filter & time_filter)
+
+            else:
+                datetime_end = parse(date_to[0])
+                date_filter = Q(end__date__lte=datetime_end)
+                time_filter = Q(end__time__lte=datetime_end)
+                query = query.filter(date_filter & time_filter)
 
         if tags:
             query = query.filter(tags__in=tags[0])
