@@ -58,6 +58,12 @@ class Events(APIView):
     def put(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
+
+        if not user.groups.filter(name='Lecturer').exists():
+            return JsonResponse(data={"error": "Only lecturers can create events."},
+                                status=status.HTTP_403_FORBIDDEN,
+                                safe=False)
+
         serializer = CreateEventSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             event_to_save = serializer.save()
