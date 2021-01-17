@@ -60,7 +60,9 @@ class Events(APIView):
         user = self.users_service.fetch_by_jwt(jwt)
 
         if not user.groups.filter(name='Lecturer').exists():
-            return JsonResponse(data=None, status=status.HTTP_403_FORBIDDEN, safe=False)
+            return JsonResponse(data={"error": "Only lecturers can create events."},
+                                status=status.HTTP_403_FORBIDDEN,
+                                safe=False)
 
         serializer = CreateEventSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
