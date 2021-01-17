@@ -40,6 +40,7 @@ class UserCreate(APIView):
 
             if user:
                 json = serializer.data
+                json['id'] = user.id
                 return Response(json, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -20,13 +20,6 @@ class AcademicTitle(Enum):
     dr_hab_inz = "dr hab. inż."
 
 
-class UsersTypes(models.Model):
-    name = models.CharField(max_length=32)
-
-    def __str__(self):
-        return self.name
-
-
 class UsersGroups(models.Model):
     name = models.CharField(max_length=64, unique=True)
 
@@ -46,7 +39,6 @@ class Users(AbstractUser):
     title = models.CharField(max_length=32,
                              choices=[(tag.value, tag) for tag in AcademicTitle], null=True)
     groups = models.ManyToManyField(UsersGroups)
-    types = models.ManyToManyField(UsersTypes)
 
     objects = UsersManager()
 

@@ -24,4 +24,4 @@ class LecturerRepository:
 
     @staticmethod
     def get_all_lecturers():
-        return Users.objects.filter(types__name='Lecturer')
+        return Users.objects.filter(groups__name='Lecturer')
