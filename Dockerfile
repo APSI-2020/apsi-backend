@@ -4,5 +4,4 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install -r requirements.txt
 COPY . /app/
-RUN python manage.py migrate; python manage.py loaddata mock_data/dump.json
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+ENTRYPOINT ./.docker/entrypoint.sh $DB_NAME $DB_USER $DB_PASSWORD $DB_IP_ADDRESS $DB_PORT $DB_ENGINE
