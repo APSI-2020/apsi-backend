@@ -21,10 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, '.env'))
 
-
 FRONTEND_URL = env('FRONTEND_URL')
 BACKEND_URL = env('BACKEND_URL')
 SSO_URL = env('SSO_URL')
+
+DB_NAME = env.get_value('DB_NAME', default=None)
+DB_USER = env.get_value('DB_USER', default=None)
+DB_PASSWORD = env.get_value('DB_PASSWORD', default=None)
+DB_IP_ADDRESS = env.get_value('DB_IP_ADDRESS', default=None)
+DB_PORT = env.get_value('DB_PORT', default=None)
 
 
 # Quick-start development settings - unsuitable for production
@@ -119,11 +124,23 @@ WSGI_APPLICATION = 'apsi.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'postgres': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_IP_ADDRESS,
+        'PORT': DB_PORT,
+    },
+    'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+default_database = env.get_value('DB_ENGINE', default='sqlite')
+print("Database " + default_database + " has been chosen")
+DATABASES['default'] = DATABASES[default_database]
 
 
 SWAGGER_SETTINGS = {
