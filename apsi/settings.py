@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'payments.app.PaymentConfig',
     'users.app.UsersConfig',
     'events.app.EventsConfig',
     'sso.apps.SsoConfig',

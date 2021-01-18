@@ -26,7 +26,6 @@ class UserSerializer(serializers.ModelSerializer):
 
         return instance
 
-
 class UserGroupSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=True)
     name = serializers.CharField(required=True)
