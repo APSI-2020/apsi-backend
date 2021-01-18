@@ -6,7 +6,7 @@ from .models import Payments
 class PaymentsRepository:
 
     def get_payments_for_user(self, user):
-        return Payments.objects.filter(user=user)
+        return Payments.objects.filter(user=user).order_by('timestamp')
 
     def get_payments_for_event(self, event):
         return Payments.objects.filter(event=event)

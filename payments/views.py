@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from events.events_repository import EventsRepository
 from users.users_service import UsersService
 from .payments_repository import PaymentsRepository
-from .serializers import CreatePaymentSerializer, PaymentURLSerializer
+from .serializers import CreatePaymentSerializer, PaymentURLSerializer, PaymentSerializer
 
 
 class Payments(APIView):
@@ -18,6 +18,8 @@ class Payments(APIView):
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
                                             description="Authorization token which starts with Bearer",
                                             type=openapi.TYPE_STRING)
+
+    payments_response = openapi.Response('response description', PaymentSerializer(many=True))
 
     @swagger_auto_schema(operation_description='Endpoint for confirming payments.',
                          request_body=CreatePaymentSerializer,
@@ -56,6 +58,20 @@ class Payments(APIView):
             self.events_repository.save(payment_to_save)
             return JsonResponse(data={'status': 'Payment confirmed'}, status=status.HTTP_202_ACCEPTED, safe=False)
         return HttpResponseBadRequest()
+
+    @swagger_auto_schema(responses={200: payments_response},
+                         operation_description='Endpoint for retrieving users payments.',
+                         manual_parameters=[authorization_token])
+    def get(self, request):
+        jwt = request.headers['Authorization']
+        user = self.users_service.fetch_by_jwt(jwt)
+
+        users_payments = self.payments_repository.get_payments_for_user(user)
+
+        serializer = PaymentSerializer(users_payments, many=True)
+        response = serializer.data
+
+        return JsonResponse(response, safe=False)
 
 
 class PaymentsURL(APIView):
@@ -108,5 +124,3 @@ class PaymentsURL(APIView):
         serializer = PaymentURLSerializer({'event_id': event_id, 'price': event.price})
         response = serializer.data
         return JsonResponse(response, safe=False)
-
-
