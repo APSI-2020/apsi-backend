@@ -17,7 +17,17 @@ class UsersGroupRepository:
 
     @staticmethod
     def find_guest_user_group_or_fail():
+        if UsersGroups.objects.filter(name='Guest').count() == 0:
+            users_group = UsersGroups(name='Guest')
+            users_group.save()
         return UsersGroups.objects.get(name='Guest')
+
+    @staticmethod
+    def find_lecturer_user_group_or_fail():
+        if UsersGroups.objects.filter(name='Lecturer').count() == 0:
+            users_group = UsersGroups(name='Lecturer')
+            users_group.save()
+        return UsersGroups.objects.get(name='Lecturer')
 
 
 class LecturerRepository:

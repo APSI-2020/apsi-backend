@@ -8,6 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apsi.settings import BACKEND_URL, FRONTEND_URL, SSO_URL
 from sso.models import SignedUsers
 from users.models import Users
+from users.serializers import UserSerializer
+from users.users_service import UsersServiceException, UsersService
 
 
 class SingleSignOn(APIView):
@@ -21,6 +23,7 @@ class SingleSignOn(APIView):
 
 
 class SingleSignOnConfirm(APIView):
+    users_service = UsersService()
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
@@ -30,9 +33,16 @@ class SingleSignOnConfirm(APIView):
 
         if SignedUsers.objects.filter(sso_id=sso_id).count() == 0:
             sso_user = request.data['user']
-            sso_user['password'] = BaseUserManager().make_random_password(45)
-            response = requests.post(BACKEND_URL + "/api/auth/register/", sso_user)
-            created_user = response.json()
+            password = BaseUserManager().make_random_password(45)
+            sso_user['id'] = None
+            sso_user['password'] = password
+            sso_user['confirm_password'] = password
+            serializer = UserSerializer(data=sso_user)
+            try:
+                response = self.users_service.create_user(user_serializer=serializer)
+            except UsersServiceException as e:
+                return e.response
+            created_user = response.json
             user = Users.objects.filter(pk=created_user['id']).get()
             SignedUsers.objects.create(sso_id=sso_id, user=user, access_token=access_token)
         else:
