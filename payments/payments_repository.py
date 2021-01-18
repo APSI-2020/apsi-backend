@@ -11,7 +11,8 @@ class PaymentsRepository:
     def get_payments_for_event(self, event):
         return Payments.objects.filter(event=event)
 
-    def get_payment_for_user_and_event(self, user, event):
+    @staticmethod
+    def get_payment_for_user_and_event(user, event):
         user_filter = Q(user=user)
         event_filter = Q(event=event)
 
