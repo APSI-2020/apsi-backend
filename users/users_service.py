@@ -30,7 +30,10 @@ class UsersService:
         if user_serializer.is_valid():
             try:
                 user = user_serializer.save()
-                user.groups.add(guest_user_group)
+                if lecturer:
+                    user.groups.add(lecturer_user_group)
+                else:
+                    user.groups.add(guest_user_group)
             except IntegrityError:
                 error_response = JsonResponse(dict(error_message='User with given email already exist.'),
                                               safe=False,
