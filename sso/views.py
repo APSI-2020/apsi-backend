@@ -38,9 +38,9 @@ class SingleSignOnConfirm(APIView):
             sso_user['password'] = password
             sso_user['confirm_password'] = password
             is_lecturer = sso_user['is_lecturer']
-            serializer = UserSerializer(data=sso_user, lecturer=is_lecturer)
+            serializer = UserSerializer(data=sso_user)
             try:
-                response = self.users_service.create_user(user_serializer=serializer)
+                response = self.users_service.create_user(user_serializer=serializer, lecturer=is_lecturer)
             except UsersServiceException as e:
                 return e.response
             created_user = response.json
