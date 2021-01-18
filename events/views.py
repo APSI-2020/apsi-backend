@@ -10,7 +10,6 @@ from events.serializers import EventSerializer, CreateEventSerializer, PlaceSeri
 from requirements.requirements_checker import RequirementsChecker
 from users.users_service import UsersService
 
-
 def does_user_meet_requirements(event, user):
     return RequirementsChecker(event.requirements).check(user)
 

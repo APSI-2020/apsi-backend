@@ -26,4 +26,4 @@ class PaymentURLSerializer(serializers.Serializer):
         fields = ('event_id', 'url', 'price')
 
     def get_payment_url(self, data_dict):
-        return "https://pl.wikipedia.org/wiki/Autostopem_przez_Galaktyk%C4%99"
+        return ""
