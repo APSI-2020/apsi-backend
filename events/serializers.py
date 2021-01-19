@@ -3,7 +3,8 @@ import json
 from rest_framework import serializers
 
 from events.models import Events, Places
-from requirements.models import Requirements, empty_requirements
+from payments.payments_repository import PaymentsRepository
+from requirements.models import Requirements
 from requirements.serializers import CreateRequirementsSerializer
 from users.serializers import UserSerializer
 
@@ -16,6 +17,11 @@ def user_signed_up_for_event(event, user_id):
 def user_is_lecturer_in_event(event, user_id):
     lecturers_ids = list(map(lambda lecturer: lecturer.pk, event.lecturers.all()))
     return user_id in lecturers_ids
+
+
+def user_payed_for_event(user, event):
+    payments = PaymentsRepository().get_payment_for_user_and_event(user, event).exists()
+    return payments
 
 
 class CreatePlaceSerializer(serializers.ModelSerializer):
@@ -57,6 +63,7 @@ class EventSerializer(serializers.ModelSerializer):
     amount_of_participants = serializers.IntegerField(source='number_of_participants')
     lecturers = UserSerializer(many=True)
     place = PlaceSerializer()
+    payment_made = serializers.SerializerMethodField('get_user_payment_information', )
 
     def get_signed_up_for(self, event):
         return user_signed_up_for_event(event, self.context['user'].pk)
@@ -64,8 +71,11 @@ class EventSerializer(serializers.ModelSerializer):
     def get_lecturer_in(self, event):
         return user_is_lecturer_in_event(event, self.context['user'].pk)
 
+    def get_user_payment_information(self, event):
+        return user_payed_for_event(self.context['user'], event)
+
     class Meta:
         model = Events
         fields = (
             'id', 'name', 'is_signed_up_for', 'is_lecturer', 'amount_of_participants', 'start', 'end',
-            'limit_of_participants', 'price', 'place', 'lecturers')
+            'limit_of_participants', 'price', 'payment_made', 'place', 'lecturers')
