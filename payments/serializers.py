@@ -27,3 +27,12 @@ class PaymentURLSerializer(serializers.Serializer):
 
     def get_payment_url(self, data_dict):
         return ""
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+
+    event_id = serializers.IntegerField(source='event.id')
+
+    class Meta:
+        model = Payments
+        fields = ('timestamp', 'price', 'event_id')
