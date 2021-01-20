@@ -8,3 +8,4 @@ django-cors-headers
 requests~=2.22.0
 django-environ
 psycopg2
+reportlab~=3.5.59
