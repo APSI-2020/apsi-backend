@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, permissions
@@ -43,12 +43,26 @@ class CurrentUserView(APIView):
 class UserGroupsView(APIView):
     permission_classes = (permissions.AllowAny,)
 
+    name = openapi.Parameter('name', openapi.IN_QUERY,
+                             description="Returns user groups with name containg given string",
+                             type=openapi.TYPE_STRING)
+
     user_groups_response = openapi.Response('response description', UserGroupSerializer(many=True))
 
     @swagger_auto_schema(operation_description='Endpoint for retrieving all users groups.',
+                         manual_parameters=[name],
                          responses={200: user_groups_response, 404: []})
     def get(self, request):
-        users_groups = UsersGroupRepository.get_all_users_groups()
+
+        parameters = dict(request.GET)
+        name = parameters.get('name', None)
+
+        if name is None:
+            users_groups = UsersGroupRepository.get_all_users_groups()
+        else:
+            name = name[0]  # it is always returned as list
+            users_groups = UsersGroupRepository.get_users_groups_with_name_containing(name)
+
         if users_groups:
             serializer = UserGroupSerializer(users_groups, many=True)
             response = serializer.data

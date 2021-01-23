@@ -16,6 +16,10 @@ class UsersGroupRepository:
         return UsersGroups.objects.all()
 
     @staticmethod
+    def get_users_groups_with_name_containing(name):
+        return UsersGroups.objects.all().filter(name__icontains=name)
+
+    @staticmethod
     def find_guest_user_group_or_fail():
         if UsersGroups.objects.filter(name='Guest').count() == 0:
             users_group = UsersGroups(name='Guest')
