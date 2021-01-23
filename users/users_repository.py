@@ -17,7 +17,7 @@ class UsersGroupRepository:
 
     @staticmethod
     def get_users_groups_with_name_containing(name):
-        return UsersGroups.objects.all().filter(name__icontains=name)
+        return UsersGroups.objects.filter(name__icontains=name)
 
     @staticmethod
     def find_guest_user_group_or_fail():
