@@ -19,7 +19,7 @@ def user_is_lecturer_in_event(event, user_id):
     return user_id in lecturers_ids
 
 
-def user_payed_for_event(user, event):
+def user_paid_for_event(user, event):
     payments = PaymentsRepository().get_payment_for_user_and_event(user, event).exists()
     return payments
 
@@ -72,7 +72,7 @@ class EventSerializer(serializers.ModelSerializer):
         return user_is_lecturer_in_event(event, self.context['user'].pk)
 
     def get_user_payment_information(self, event):
-        return user_payed_for_event(self.context['user'], event)
+        return user_paid_for_event(self.context['user'], event)
 
     class Meta:
         model = Events

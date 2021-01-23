@@ -7,8 +7,12 @@ from rest_framework.views import APIView
 from events.events_repository import EventsRepository
 from events.models import Places as ModelPlaces
 from events.serializers import EventSerializer, CreateEventSerializer, PlaceSerializer, CreatePlaceSerializer
+from events.ticket_pdf_generator import TicketPdfGenerator
 from requirements.requirements_checker import RequirementsChecker
 from users.users_service import UsersService
+from events.serializers import user_paid_for_event
+from django.http import FileResponse
+
 
 def does_user_meet_requirements(event, user):
     return RequirementsChecker(event.requirements).check(user)
@@ -146,3 +150,36 @@ class Places(APIView):
             place = serializer.save()
             place.save()
             return JsonResponse({'id': place.pk}, safe=False)
+
+
+class Ticket(APIView):
+    events_repository = EventsRepository()
+    users_service = UsersService()
+    ticket_pdf_generator = TicketPdfGenerator()
+
+    file_response = openapi.Response('File Attachment', schema=openapi.Schema(type=openapi.TYPE_FILE))
+    authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
+                                            description="Authorization token which starts with Bearer",
+                                            type=openapi.TYPE_STRING)
+
+    @swagger_auto_schema(operation_description='Endpoint for retrieving ticket',
+                         responses={200: file_response, 403: None},
+                         manual_parameters=[authorization_token])
+    def get(self, request, event_id):
+        jwt = request.headers['Authorization']
+        user = self.users_service.fetch_by_jwt(jwt)
+        event = self.events_repository.get_event_by_id(event_id)
+
+        if not event.is_participant(user):
+            return JsonResponse(data={'error': 'User is not a participant'}, status=status.HTTP_403_FORBIDDEN,
+                                safe=False)
+
+        if event.price is not None:
+            if not user_paid_for_event(user, event):
+                return JsonResponse(data={'error': 'The participant did not pay for the ticket'},
+                                    status=status.HTTP_403_FORBIDDEN,
+                                    safe=False)
+
+        pdf = self.ticket_pdf_generator.generate(user, event)
+
+        return FileResponse(pdf, as_attachment=True, filename='ticket.pdf')

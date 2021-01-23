@@ -28,6 +28,9 @@ class Events(models.Model):
     def __str__(self):
         return self.name
 
+    def is_participant(self, user):
+        return self.participants.filter(pk=user.pk).exists()
+
 
 class Tickets(models.Model):
     qr_code_content = models.CharField(max_length=256)
