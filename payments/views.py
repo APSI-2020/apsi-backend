@@ -68,7 +68,7 @@ class Payments(APIView):
 
         users_payments = self.payments_repository.get_payments_for_user(user)
 
-        serializer = PaymentSerializer(users_payments, many=True)
+        serializer = PaymentSerializer(users_payments, many=True, context=dict(user=user))
         response = serializer.data
 
         return JsonResponse(response, safe=False)
