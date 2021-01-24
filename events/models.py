@@ -30,11 +30,3 @@ class Events(models.Model):
 
     def is_participant(self, user):
         return self.participants.filter(pk=user.pk).exists()
-
-
-class Tickets(models.Model):
-    qr_code_content = models.CharField(max_length=256)
-    event = models.ForeignKey(Events, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.event
