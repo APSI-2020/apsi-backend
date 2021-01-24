@@ -53,14 +53,11 @@ class UserGroupsView(APIView):
                          manual_parameters=[name],
                          responses={200: user_groups_response, 404: []})
     def get(self, request):
-
-        parameters = dict(request.GET)
-        name = parameters.get('name', None)
+        name = request.GET.get('name', None)
 
         if name is None:
             users_groups = UsersGroupRepository.get_all_users_groups()
         else:
-            name = name[0]  # it is always returned as list
             users_groups = UsersGroupRepository.get_users_groups_with_name_containing(name)
 
         if users_groups:
