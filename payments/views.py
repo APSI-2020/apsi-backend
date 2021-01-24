@@ -21,6 +21,7 @@ class Payments(APIView):
 
     payments_response = openapi.Response('response description', PaymentSerializer(many=True))
 
+
     @swagger_auto_schema(operation_description='Endpoint for confirming payments.',
                          request_body=CreatePaymentSerializer,
                          manual_parameters=[authorization_token],
