@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import Payments
-
+from events.serializers import EventSerializer
 
 class CreatePaymentSerializer(serializers.ModelSerializer):
     event_id = serializers.IntegerField()
@@ -30,9 +30,9 @@ class PaymentURLSerializer(serializers.Serializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-
     event_id = serializers.IntegerField(source='event.id')
+    event = EventSerializer()
 
     class Meta:
         model = Payments
-        fields = ('timestamp', 'price', 'event_id')
+        fields = ('timestamp', 'price', 'event_id', 'event')
