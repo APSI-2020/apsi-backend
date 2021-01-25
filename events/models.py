@@ -20,6 +20,8 @@ class Events(models.Model):
     number_of_participants = models.IntegerField(default=0)
     price = models.DecimalField(null=True, decimal_places=2, max_digits=6)
     place = models.ForeignKey(Places, on_delete=models.CASCADE)
+    root = models.ForeignKey('Events', on_delete=models.CASCADE, null=True, blank=True)
+    is_root = models.BooleanField(default=False, null=False)
 
     requirements = models.OneToOneField(Requirements, on_delete=models.CASCADE, null=False)
     lecturers = models.ManyToManyField(Users, related_name='hosted_events')
