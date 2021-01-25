@@ -7,6 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.views import APIView
 
+from events.cyclic_event_generator import CyclicEventGenerator
 from events.events_repository import EventsRepository
 from events.models import Places as ModelPlaces
 from events.place_checker import PlaceChecker
@@ -30,11 +31,8 @@ def is_event_occurring_in_a_single_day(start_datetime, end_datetime):
     return True
 
 
-def generate_cyclic_events():
-    pass
-
-
 class Events(APIView):
+    cyclic_events_generator = CyclicEventGenerator()
     events_repository = EventsRepository()
     users_service = UsersService()
     events_response = openapi.Response('response description', EventSerializer(many=True))
@@ -120,6 +118,9 @@ class Events(APIView):
 
         else:
             data_copy = deepcopy(request.data)
+            cyclic_events = self.cyclic_events_generator.generate_events(data_copy)
+            for event in cyclic_events:
+                print(event)
 
             return JsonResponse(data={"error": "NOT IMPLEMENTED YET"},
                                 status=status.HTTP_501_NOT_IMPLEMENTED,
