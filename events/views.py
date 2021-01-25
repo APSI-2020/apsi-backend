@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from dateutil.parser import parse
 from django.http import FileResponse
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from drf_yasg import openapi
@@ -26,9 +27,10 @@ def is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
     return PlaceChecker(place_id).check_if_place_available(start_datetime, end_datetime)
 
 
-def is_event_occurring_in_a_single_day(start_datetime, end_datetime):
-    # TODO finish this method
-    return True
+def is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_datetime):
+    start = parse(start_datetime)
+    end = parse(end_datetime)
+    return start.date() == end.date() and start < end
 
 
 class Events(APIView):
@@ -102,10 +104,11 @@ class Events(APIView):
                                 status=status.HTTP_409_CONFLICT,
                                 safe=False)
 
-        if not is_event_occurring_in_a_single_day(start_datetime, end_datetime):
-            return JsonResponse(data={"error": "Event must start and end on the same day"},
-                                status=status.HTTP_403_FORBIDDEN,
-                                safe=False)
+        if not is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_datetime):
+            return JsonResponse(data={
+                "error": "Event must start and end on the same day and the start must be before end of the event "},
+                status=status.HTTP_403_FORBIDDEN,
+                safe=False)
 
         if frequency == 'ONCE':
             serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False))
@@ -121,6 +124,13 @@ class Events(APIView):
             cyclic_events = self.cyclic_events_generator.generate_events(data_copy)
             for event in cyclic_events:
                 print(event)
+
+            # Creating root
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True))
+            if serializer.is_valid(raise_exception=True):
+                root_event = serializer.save()
+
+            cyclic_events_data = generate_cyclic_events(data_copy)
 
             return JsonResponse(data={"error": "NOT IMPLEMENTED YET"},
                                 status=status.HTTP_501_NOT_IMPLEMENTED,
