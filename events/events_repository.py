@@ -73,6 +73,13 @@ class EventsRepository:
         event_to_save.save()
         return event_to_save
 
+    def save_list_of_events(self, events_to_save):
+        saved_events = []
+        for event in events_to_save:
+            saved_events.append(event.save())
+
+        return saved_events
+
     def get_events_for_given_place_and_time_brakcet(self, place_id, start_datetime, end_datetime):
         place_filter = Q(place_id=place_id)
 

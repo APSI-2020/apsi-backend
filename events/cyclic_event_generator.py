@@ -1,6 +1,7 @@
-from datetime import timedelta
-from dateutil.parser import parse
 from copy import deepcopy
+from datetime import timedelta
+
+from dateutil.parser import parse
 
 
 class CyclicEventGenerator:
@@ -29,7 +30,7 @@ class CyclicEventGenerator:
         diff = end_date - start_date
 
         return [self.with_modified_dates(request_data, timestamp, diff) for timestamp in
-                self.daterange(start_date, cyclic_boundary, interval)]
+                self.daterange(start_date, cyclic_boundary, interval)][1:]
 
     def with_modified_dates(self, data, timestamp, diff):
         start_timestamp_right_format = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')

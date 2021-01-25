@@ -42,7 +42,7 @@ def place_is_free_for_cyclic_event(cyclic_events_data):
         start_datetime = event_data['start']
         end_datetime = event_data['end']
 
-        if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime)
+        if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
             return False
 
     return True
@@ -122,7 +122,7 @@ class Events(APIView):
         if not is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_datetime):
             return JsonResponse(data={
                 "error": "Event must start and end on the same day and the start must be before end of the event "},
-                status=status.HTTP_403_FORBIDDEN,
+                status=status.HTTP_400_BAD_REQUEST,
                 safe=False)
 
         if frequency == 'ONCE':
@@ -135,7 +135,6 @@ class Events(APIView):
             return HttpResponseBadRequest()
 
         else:
-
             # Creating root
             serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True))
             if serializer.is_valid(raise_exception=True):
@@ -153,14 +152,16 @@ class Events(APIView):
                                     status=status.HTTP_409_CONFLICT,
                                     safe=False)
             else:
-                serializer = CreateEventSerializer(data=cyclic_events,
+                serializer = CreateEventSerializer(data=cyclic_events, many=True,
                                                    context=dict(root=root_event, is_cyclic=True))
 
                 if serializer.is_valid(raise_exception=True):
                     events_to_save = serializer.save()
-                    events = self.events_repository.save(events_to_save)
-                    events_ids = [event.id for event in events]
+                    events_ids = [root_event.id]
+                    events_ids.extend([event.id for event in events_to_save])
                     return JsonResponse({'ids': events_ids}, safe=False)
+                else:
+                    root_event.delete()
 
                 return HttpResponseBadRequest()
 

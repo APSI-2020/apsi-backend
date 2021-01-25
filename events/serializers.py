@@ -61,7 +61,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
         saved_requirements = Requirements.objects.create(requirement_json=json.dumps(requirements))
         validated_data['requirements'] = saved_requirements
         lecturers = validated_data.pop('lecturers')
-        instance = self.Meta.model(**validated_data, is_cyclic=self.context['is_cyclic'], root=self.context['root'].pk)
+        instance = self.Meta.model(**validated_data, is_cyclic=self.context['is_cyclic'], root=self.context['root'])
         instance.save()
         instance.lecturers.add(*lecturers)
         return instance
