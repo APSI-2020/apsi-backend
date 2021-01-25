@@ -32,6 +32,21 @@ def is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_date
     return start.date() == end.date() and start < end
 
 
+def place_is_free_for_cyclic_event(cyclic_events_data):
+    if len(cyclic_events_data) == 0:
+        return True
+
+    for event_data in cyclic_events_data:
+        place_id = event_data['place']
+        start_datetime = event_data['start']
+        end_datetime = event_data['end']
+
+        if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime)
+            return False
+
+    return True
+
+
 def generate_cyclic_events(request_data):
     return []
 
@@ -102,7 +117,7 @@ class Events(APIView):
                                 safe=False)
 
         if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
-            return JsonResponse(data={"error": "This place is already booked for given time bracket"},
+            return JsonResponse(data={"error": "This place is already booked for given time"},
                                 status=status.HTTP_409_CONFLICT,
                                 safe=False)
 
@@ -124,16 +139,29 @@ class Events(APIView):
         else:
             data_copy = deepcopy(request.data)
 
-            # Creating root
             serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True))
             if serializer.is_valid(raise_exception=True):
                 root_event = serializer.save()
 
             cyclic_events_data = generate_cyclic_events(data_copy)
 
-            return JsonResponse(data={"error": "NOT IMPLEMENTED YET"},
-                                status=status.HTTP_501_NOT_IMPLEMENTED,
-                                safe=False)
+            if not place_is_free_for_cyclic_event(cyclic_events_data):
+                root_event.delete()
+
+                return JsonResponse(data={"error": "This place is already booked for given time"},
+                                    status=status.HTTP_409_CONFLICT,
+                                    safe=False)
+            else:
+                serializer = CreateEventSerializer(data=cyclic_events_data,
+                                                   context=dict(root=root_event, is_cyclic=True))
+
+                if serializer.is_valid(raise_exception=True):
+                    events_to_save = serializer.save()
+                    events = self.events_repository.save(events_to_save)
+                    events_ids = [event.id for event in events]
+                    # TODO check if this is the right return data format
+                    return JsonResponse({'ids': events_ids}, safe=False)
+                return HttpResponseBadRequest()
 
 
 class Event(APIView):
