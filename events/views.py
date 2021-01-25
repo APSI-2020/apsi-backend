@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.http import FileResponse
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from drf_yasg import openapi
@@ -21,6 +23,15 @@ def does_user_meet_requirements(event, user):
 
 def is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
     return PlaceChecker(place_id).check_if_place_available(start_datetime, end_datetime)
+
+
+def is_event_occurring_in_a_single_day(start_datetime, end_datetime):
+    # TODO finish this method
+    return True
+
+
+def generate_cyclic_events():
+    pass
 
 
 class Events(APIView):
@@ -88,13 +99,18 @@ class Events(APIView):
                                 status=status.HTTP_400_BAD_REQUEST,
                                 safe=False)
 
-        if frequency == 'ONCE':
-            if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
-                return JsonResponse(data={"error": "This place is already booked for given time bracket"},
-                                    status=status.HTTP_409_CONFLICT,
-                                    safe=False)
+        if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
+            return JsonResponse(data={"error": "This place is already booked for given time bracket"},
+                                status=status.HTTP_409_CONFLICT,
+                                safe=False)
 
-            serializer = CreateEventSerializer(data=request.data)
+        if not is_event_occurring_in_a_single_day(start_datetime, end_datetime):
+            return JsonResponse(data={"error": "Event must start and end on the same day"},
+                                status=status.HTTP_403_FORBIDDEN,
+                                safe=False)
+
+        if frequency == 'ONCE':
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False))
 
             if serializer.is_valid(raise_exception=True):
                 event_to_save = serializer.save()
@@ -103,6 +119,8 @@ class Events(APIView):
             return HttpResponseBadRequest()
 
         else:
+            data_copy = deepcopy(request.data)
+
             return JsonResponse(data={"error": "NOT IMPLEMENTED YET"},
                                 status=status.HTTP_501_NOT_IMPLEMENTED,
                                 safe=False)
