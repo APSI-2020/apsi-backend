@@ -1,3 +1,4 @@
+from django.http import FileResponse
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -6,16 +7,21 @@ from rest_framework.views import APIView
 
 from events.events_repository import EventsRepository
 from events.models import Places as ModelPlaces
+from events.place_checker import PlaceChecker
 from events.serializers import EventSerializer, CreateEventSerializer, PlaceSerializer, CreatePlaceSerializer
+from events.serializers import user_paid_for_event
 from events.ticket_pdf_generator import TicketPdfGenerator
 from requirements.requirements_checker import RequirementsChecker
 from users.users_service import UsersService
-from events.serializers import user_paid_for_event
-from django.http import FileResponse
 
 
 def does_user_meet_requirements(event, user):
     return RequirementsChecker(event.requirements).check(user)
+
+
+def is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
+    return PlaceChecker(place_id).check_if_place_available(start_datetime, end_datetime)
+
 
 class Events(APIView):
     events_repository = EventsRepository()
@@ -56,7 +62,12 @@ class Events(APIView):
         return JsonResponse(response, safe=False)
 
     @swagger_auto_schema(request_body=CreateEventSerializer, operation_description='Endpoint for adding event.',
-                         manual_parameters=[authorization_token])
+                         manual_parameters=[authorization_token],
+                         responses={200: 'id',
+                                    403: 'Only lecturers can create events',
+                                    400: 'Frequency of event occurrence must be defined',
+                                    409: 'This place is already booked for given time bracket'
+                                    })
     def put(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
@@ -66,12 +77,35 @@ class Events(APIView):
                                 status=status.HTTP_403_FORBIDDEN,
                                 safe=False)
 
-        serializer = CreateEventSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            event_to_save = serializer.save()
-            id = self.events_repository.save(event_to_save).pk
-            return JsonResponse({'id': id}, safe=False)
-        return HttpResponseBadRequest()
+        frequency = request.data.get('frequency', None)
+        place_id = request.data.get('place', None)
+        start_datetime = request.data.get('start', None)
+        end_datetime = request.data.get('end', None)
+
+        if frequency is None or frequency not in ['ONCE', 'DAILY', 'WEEKLY', 'MONTHLY'] \
+                or place_id is None or start_datetime is None or end_datetime is None:
+            return JsonResponse(data={"error": "One of the parameters is not defined"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                                safe=False)
+
+        if frequency == 'ONCE':
+            if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
+                return JsonResponse(data={"error": "This place is already booked for given time bracket"},
+                                    status=status.HTTP_409_CONFLICT,
+                                    safe=False)
+
+            serializer = CreateEventSerializer(data=request.data)
+
+            if serializer.is_valid(raise_exception=True):
+                event_to_save = serializer.save()
+                id = self.events_repository.save(event_to_save).pk
+                return JsonResponse({'id': id}, safe=False)
+            return HttpResponseBadRequest()
+
+        else:
+            return JsonResponse(data={"error": "NOT IMPLEMENTED YET"},
+                                status=status.HTTP_501_NOT_IMPLEMENTED,
+                                safe=False)
 
 
 class Event(APIView):

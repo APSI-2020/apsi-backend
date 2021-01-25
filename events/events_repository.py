@@ -72,3 +72,16 @@ class EventsRepository:
     def save(self, event_to_save):
         event_to_save.save()
         return event_to_save
+
+    def get_events_for_given_place_and_time_brakcet(self, place_id, start_datetime, end_datetime):
+        place_filter = Q(place_id=place_id)
+
+        # Checking if two ranges overlap is done by this formula:
+        # end1 >= start2 and end2 >= start1 which equals end1 >= start2 and start1 < end2
+
+        first_time_filter = Q(end__gte=start_datetime)
+        second_time_filter = Q(start__lt=end_datetime)
+
+        # it is not returned right away for debugging purposes
+        events = Events.objects.filter(place_filter & first_time_filter & second_time_filter)
+        return events

@@ -41,9 +41,15 @@ class PlaceSerializer(serializers.ModelSerializer):
 class CreateEventSerializer(serializers.ModelSerializer):
     requirements = CreateRequirementsSerializer(many=True, default=[])
 
+    # These two fields are not stored in DB
+    frequency = serializers.CharField(required=False,
+                                      help_text='This field should be one of following values: ONCE, DAILY, WEEKLY, MONTHLY')
+    cyclic_boundary = serializers.DateTimeField(required=True)
+
     class Meta:
         model = Events
-        fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers', 'requirements')
+        fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers', 'requirements',
+                  'frequency', 'cyclic_boundary')
 
     def create(self, validated_data):
         requirements = validated_data.pop('requirements')
