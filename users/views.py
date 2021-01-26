@@ -6,7 +6,7 @@ from rest_framework.authentication import get_authorization_header
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserSerializer, UserGroupSerializer, LecturerSerializer
+from .serializers import UserSerializer, UserGroupSerializer, LecturerSerializer, CurrentUserSerializer
 from .users_repository import LecturerRepository
 from .users_repository import UsersGroupRepository
 from .users_service import UsersService, UsersServiceException
@@ -28,12 +28,16 @@ class UserCreate(APIView):
 class CurrentUserView(APIView):
     users_service = UsersService()
 
+    current_user_response = openapi.Response('response description', CurrentUserSerializer())
+
+    @swagger_auto_schema(operation_description='Endpoint for retrieving current user data.',
+                         responses={200: current_user_response, 404: None})
     def get(self, request):
         token = get_authorization_header(request).decode('utf-8')
 
         user = self.users_service.fetch_by_jwt(token)
 
-        serializer = UserSerializer(user)
+        serializer = CurrentUserSerializer(user)
 
         json = serializer.data
 

@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         return instance
 
+
 class UserGroupSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=True)
     name = serializers.CharField(required=True)
@@ -33,6 +34,17 @@ class UserGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = UsersGroups
         fields = ('id', 'name')
+
+
+class CurrentUserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    groups = UserGroupSerializer(many=True)
+
+    class Meta:
+        model = Users
+        fields = ('email', 'first_name', 'last_name', 'groups')
 
 
 class LecturerSerializer(serializers.ModelSerializer):
