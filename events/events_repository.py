@@ -21,6 +21,7 @@ class EventsRepository:
         price = filters.get('price', None)
         place = filters.get('place', None)
         user_signed_up = filters.get('user_signed_up', None)
+        only_not_cyclical_and_roots = filters.get('only_not_cyclical_and_roots', None)
 
         if price is not None:
             query = query.filter(price__lte=float(price[0]))
@@ -62,6 +63,9 @@ class EventsRepository:
             date_filter = Q(start__date__lte=now)
             time_filter = Q(start__time__lte=now)
             query = query.filter(date_filter & time_filter)
+
+        if only_not_cyclical_and_roots:
+            query = query.filter(root__end__isnull=True)
 
         return query.all()
 

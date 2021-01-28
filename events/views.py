@@ -74,10 +74,14 @@ class Events(APIView):
                                        description="Returns only those events that user is signed up for",
                                        type=openapi.TYPE_BOOLEAN, default=False)
 
+    only_not_cyclical_and_roots = openapi.Parameter('only_not_cyclical_and_roots', openapi.IN_QUERY,
+                                                    description="Returns only those events that are not cyclical or are cyclic events roots",
+                                                    type=openapi.TYPE_BOOLEAN, default=False)
+
     @swagger_auto_schema(operation_description='Endpoint for retrieving filtered events.',
                          responses={200: events_response, 404: []},
                          manual_parameters=[authorization_token, price, date_from, date_to, name_contains, past_events,
-                                            place, user_signed_up])
+                                            place, user_signed_up, only_not_cyclical_and_roots])
     def get(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
