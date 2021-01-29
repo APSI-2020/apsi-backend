@@ -10,8 +10,8 @@ That means that he has to be in specific user groups.
 * Bachelor Students,
 * Master Students,
 * Doctoral Students,
-* Guests,
-* Lecturers
+* Guest,
+* Lecturer,
 * Course specific (for example students that take APSI course, there can be many of those)
 
 
