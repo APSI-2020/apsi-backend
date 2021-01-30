@@ -21,6 +21,7 @@ class EventsRepository:
         price = filters.get('price', None)
         place = filters.get('place', None)
         user_signed_up = filters.get('user_signed_up', None)
+        user_is_assigned_lecturer = filters.get('user_is_assigned_lecturer', None)
         only_not_cyclical_and_roots = filters.get('only_not_cyclical_and_roots', None)
 
         if price is not None:
@@ -36,6 +37,11 @@ class EventsRepository:
             user_signed_up = user_signed_up[0] == 'true'
             if user_signed_up:
                 query = query.filter(participants=user.id)
+
+        if user_is_assigned_lecturer is not None:
+            user_is_assigned_lecturer = user_is_assigned_lecturer[0] == 'true'
+            if user_is_assigned_lecturer:
+                query = query.filter(lecturers=user.id)
 
         if date_from or date_to:
             if date_from and date_to:
