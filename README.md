@@ -49,7 +49,7 @@ Some mock data have been generated with [Mockaroo](https://www.mockaroo.com/)
 
 There are two ways of loading mock data:
 1. Run server (python3 manage.py runserver or via IDE)
-2. Run script mock_data/generate_data.sh (bash mock_data/generate_data.sh)
-or
+2. Run script mock_data/generate_data.sh (bash mock_data/generate_data.sh)  
+or  
 1. Run migrations (python3 manage.py migrate)
 2. Load data from .json file (python3 manage.py loaddata mock_data/dump.json)
