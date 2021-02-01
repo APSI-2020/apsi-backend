@@ -10,17 +10,14 @@ from rest_framework.views import APIView
 
 from events.cyclic_event_generator import CyclicEventGenerator
 from events.events_repository import EventsRepository
+from events.events_service import EventsService
 from events.models import Places as ModelPlaces
 from events.place_checker import PlaceChecker
 from events.serializers import EventSerializer, CreateEventSerializer, PlaceSerializer, CreatePlaceSerializer
 from events.serializers import user_paid_for_event
 from events.ticket_pdf_generator import TicketPdfGenerator
-from requirements.requirements_checker import RequirementsChecker
 from users.users_service import UsersService
 
-
-def does_user_meet_requirements(event, user):
-    return RequirementsChecker(event.requirements).check(user)
 
 
 def is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
@@ -52,6 +49,7 @@ class Events(APIView):
     cyclic_events_generator = CyclicEventGenerator()
     events_repository = EventsRepository()
     users_service = UsersService()
+    events_service = EventsService()
     events_response = openapi.Response('response description', EventSerializer(many=True))
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
                                             description="Authorization token which starts with Bearer",
@@ -87,11 +85,12 @@ class Events(APIView):
                          manual_parameters=[authorization_token, price, date_from, date_to, name_contains, past_events,
                                             place, user_signed_up, user_is_assigned_lecturer,
                                             only_not_cyclical_and_roots])
+
     def get(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         events = self.events_repository.find_events_for_given_with_respect_to_filters(self, user)
-        available_events = list(filter(lambda event: does_user_meet_requirements(event, user), events))
+        available_events = list(filter(lambda event: self.events_service.does_user_meet_requirements(event, user), events))
         serializer = EventSerializer(available_events, context=dict(user=user), many=True)
         response = serializer.data
         return JsonResponse(response, safe=False)
@@ -178,6 +177,7 @@ class Events(APIView):
 class Event(APIView):
     events_repository = EventsRepository()
     users_service = UsersService()
+    events_service = EventsService()
 
     event_response = openapi.Response('response description', EventSerializer(many=False))
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
@@ -191,8 +191,8 @@ class Event(APIView):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         event = self.events_repository.get_event_by_id(event_id)
-        if not does_user_meet_requirements(event, user):
-            return JsonResponse(data=None, status=status.HTTP_404_NOT_FOUND, safe=False)
+        if not self.events_service.does_user_meet_requirements(event, user):
+            return JsonResponse(dict(error="User does not meet requirements to preview this event"), status=status.HTTP_404_NOT_FOUND, safe=False)
         serializer = EventSerializer(event, context=dict(user=user), many=False)
         response = serializer.data
         return JsonResponse(response, safe=False)
@@ -201,6 +201,7 @@ class Event(APIView):
 class JoinEvent(APIView):
     events_repository = EventsRepository()
     users_service = UsersService()
+    events_service = EventsService()
 
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
                                             description="Authorization token which starts with Bearer",
@@ -212,22 +213,7 @@ class JoinEvent(APIView):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         event = self.events_repository.get_event_by_id(event_id)
-        serializer = EventSerializer(event, context=dict(user=user), many=False)
-        serialized_event = serializer.data
-
-        if serialized_event['limit_of_participants'] <= serialized_event['amount_of_participants']:
-            return JsonResponse(dict(error_message='Event is full.'), safe=False, status=400)
-
-        if serialized_event['is_signed_up_for']:
-            return JsonResponse(dict(error_message='User is already signed up for this event'), safe=False, status=400)
-
-        if does_user_meet_requirements(event, user):
-            event.number_of_participants = event.number_of_participants + 1
-            event.participants.add(user)
-            event.save()
-            return HttpResponse(status=status.HTTP_201_CREATED)
-
-        return JsonResponse(dict(error_message='User does not meet requirements'), safe=False, status=400)
+        return self.events_service.join(user, event)
 
 
 class Places(APIView):

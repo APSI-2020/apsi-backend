@@ -10,6 +10,9 @@ class EventsRepository:
     def __init__(self):
         pass
 
+    def find_all_cyclic_events_for_given_root(self, root):
+        return Events.objects.filter(Q(root=root) | Q(pk=root.id)).all()
+
     def find_events_for_given_with_respect_to_filters(self, request, user):
         filters = dict(request.request.GET)
         query = Events.objects
