@@ -1,25 +1,55 @@
+from copy import deepcopy
+
+from dateutil.parser import parse
+from django.http import FileResponse
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.views import APIView
 
+from events.cyclic_event_generator import CyclicEventGenerator
 from events.events_repository import EventsRepository
+from events.events_service import EventsService
 from events.models import Places as ModelPlaces
+from events.place_checker import PlaceChecker
 from events.serializers import EventSerializer, CreateEventSerializer, PlaceSerializer, CreatePlaceSerializer
-from events.ticket_pdf_generator import TicketPdfGenerator
-from requirements.requirements_checker import RequirementsChecker
-from users.users_service import UsersService
 from events.serializers import user_paid_for_event
-from django.http import FileResponse
+from events.ticket_pdf_generator import TicketPdfGenerator
+from users.users_service import UsersService
 
 
-def does_user_meet_requirements(event, user):
-    return RequirementsChecker(event.requirements).check(user)
+
+def is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
+    return PlaceChecker(place_id).check_if_place_available(start_datetime, end_datetime)
+
+
+def is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_datetime):
+    start = parse(start_datetime)
+    end = parse(end_datetime)
+    return start.date() == end.date() and start < end
+
+
+def place_is_free_for_cyclic_event(cyclic_events_data):
+    if len(cyclic_events_data) == 0:
+        return True
+
+    for event_data in cyclic_events_data:
+        place_id = event_data['place']
+        start_datetime = event_data['start']
+        end_datetime = event_data['end']
+
+        if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
+            return False
+
+    return True
+
 
 class Events(APIView):
+    cyclic_events_generator = CyclicEventGenerator()
     events_repository = EventsRepository()
     users_service = UsersService()
+    events_service = EventsService()
     events_response = openapi.Response('response description', EventSerializer(many=True))
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
                                             description="Authorization token which starts with Bearer",
@@ -42,21 +72,36 @@ class Events(APIView):
                                        description="Returns only those events that user is signed up for",
                                        type=openapi.TYPE_BOOLEAN, default=False)
 
+    user_is_assigned_lecturer = openapi.Parameter('user_is_assigned_lecturer', openapi.IN_QUERY,
+                                                  description="Returns only those events that user is assigned as lecturer",
+                                                  type=openapi.TYPE_BOOLEAN, default=False)
+
+    only_not_cyclical_and_roots = openapi.Parameter('only_not_cyclical_and_roots', openapi.IN_QUERY,
+                                                    description="Returns only those events that are not cyclical or are cyclic events roots",
+                                                    type=openapi.TYPE_BOOLEAN, default=False)
+
     @swagger_auto_schema(operation_description='Endpoint for retrieving filtered events.',
                          responses={200: events_response, 404: []},
                          manual_parameters=[authorization_token, price, date_from, date_to, name_contains, past_events,
-                                            place, user_signed_up])
+                                            place, user_signed_up, user_is_assigned_lecturer,
+                                            only_not_cyclical_and_roots])
+
     def get(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         events = self.events_repository.find_events_for_given_with_respect_to_filters(self, user)
-        available_events = list(filter(lambda event: does_user_meet_requirements(event, user), events))
+        available_events = list(filter(lambda event: self.events_service.does_user_meet_requirements(event, user), events))
         serializer = EventSerializer(available_events, context=dict(user=user), many=True)
         response = serializer.data
         return JsonResponse(response, safe=False)
 
     @swagger_auto_schema(request_body=CreateEventSerializer, operation_description='Endpoint for adding event.',
-                         manual_parameters=[authorization_token])
+                         manual_parameters=[authorization_token],
+                         responses={200: 'id',
+                                    403: 'Only lecturers can create events',
+                                    400: 'Frequency of event occurrence must be defined',
+                                    409: 'This place is already booked for given time bracket'
+                                    })
     def put(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
@@ -66,17 +111,73 @@ class Events(APIView):
                                 status=status.HTTP_403_FORBIDDEN,
                                 safe=False)
 
-        serializer = CreateEventSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            event_to_save = serializer.save()
-            id = self.events_repository.save(event_to_save).pk
-            return JsonResponse({'id': id}, safe=False)
-        return HttpResponseBadRequest()
+        frequency = request.data.get('frequency', None)
+        place_id = request.data.get('place', None)
+        start_datetime = request.data.get('start', None)
+        end_datetime = request.data.get('end', None)
+
+        if frequency is None or frequency not in ['ONCE', 'DAILY', 'WEEKLY', 'MONTHLY'] \
+                or place_id is None or start_datetime is None or end_datetime is None:
+            return JsonResponse(data={"error": "One of the parameters is not defined"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                                safe=False)
+
+        if not is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
+            return JsonResponse(data={"error": "This place is already booked for given time"},
+                                status=status.HTTP_409_CONFLICT,
+                                safe=False)
+
+        if not is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_datetime):
+            return JsonResponse(data={
+                "error": "Event must start and end on the same day and the start must be before end of the event "},
+                status=status.HTTP_400_BAD_REQUEST,
+                safe=False)
+
+        if frequency == 'ONCE':
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False))
+
+            if serializer.is_valid(raise_exception=True):
+                event_to_save = serializer.save()
+                id = self.events_repository.save(event_to_save).pk
+                return JsonResponse({'id': id}, safe=False)
+            return HttpResponseBadRequest()
+
+        else:
+            # Creating root
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True))
+            if serializer.is_valid(raise_exception=True):
+                root_event = serializer.save()
+
+            data_copy = deepcopy(request.data)
+            cyclic_events = self.cyclic_events_generator.generate_events(data_copy)
+            for event in cyclic_events:
+                print(event)
+
+            if not place_is_free_for_cyclic_event(cyclic_events):
+                root_event.delete()
+
+                return JsonResponse(data={"error": "This place is already booked for given time"},
+                                    status=status.HTTP_409_CONFLICT,
+                                    safe=False)
+            else:
+                serializer = CreateEventSerializer(data=cyclic_events, many=True,
+                                                   context=dict(root=root_event, is_cyclic=True))
+
+                if serializer.is_valid(raise_exception=True):
+                    events_to_save = serializer.save()
+                    events_ids = [root_event.id]
+                    events_ids.extend([event.id for event in events_to_save])
+                    return JsonResponse({'ids': events_ids}, safe=False)
+                else:
+                    root_event.delete()
+
+                return HttpResponseBadRequest()
 
 
 class Event(APIView):
     events_repository = EventsRepository()
     users_service = UsersService()
+    events_service = EventsService()
 
     event_response = openapi.Response('response description', EventSerializer(many=False))
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
@@ -90,8 +191,8 @@ class Event(APIView):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         event = self.events_repository.get_event_by_id(event_id)
-        if not does_user_meet_requirements(event, user):
-            return JsonResponse(data=None, status=status.HTTP_404_NOT_FOUND, safe=False)
+        if not self.events_service.does_user_meet_requirements(event, user):
+            return JsonResponse(dict(error="User does not meet requirements to preview this event"), status=status.HTTP_404_NOT_FOUND, safe=False)
         serializer = EventSerializer(event, context=dict(user=user), many=False)
         response = serializer.data
         return JsonResponse(response, safe=False)
@@ -100,6 +201,7 @@ class Event(APIView):
 class JoinEvent(APIView):
     events_repository = EventsRepository()
     users_service = UsersService()
+    events_service = EventsService()
 
     authorization_token = openapi.Parameter('Authorization', openapi.IN_HEADER,
                                             description="Authorization token which starts with Bearer",
@@ -111,22 +213,7 @@ class JoinEvent(APIView):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         event = self.events_repository.get_event_by_id(event_id)
-        serializer = EventSerializer(event, context=dict(user=user), many=False)
-        serialized_event = serializer.data
-
-        if serialized_event['limit_of_participants'] <= serialized_event['amount_of_participants']:
-            return JsonResponse(dict(error_message='Event is full.'), safe=False, status=400)
-
-        if serialized_event['is_signed_up_for']:
-            return JsonResponse(dict(error_message='User is already signed up for this event'), safe=False, status=400)
-
-        if does_user_meet_requirements(event, user):
-            event.number_of_participants = event.number_of_participants + 1
-            event.participants.add(user)
-            event.save()
-            return HttpResponse(status=status.HTTP_201_CREATED)
-
-        return JsonResponse(dict(error_message='User does not meet requirements'), safe=False, status=400)
+        return self.events_service.join(user, event)
 
 
 class Places(APIView):

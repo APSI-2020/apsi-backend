@@ -41,16 +41,27 @@ class PlaceSerializer(serializers.ModelSerializer):
 class CreateEventSerializer(serializers.ModelSerializer):
     requirements = CreateRequirementsSerializer(many=True, default=[])
 
+    # These two fields are not stored in DB
+    frequency = serializers.CharField(required=False,
+                                      help_text='This field should be one of following values: ONCE, DAILY, WEEKLY, MONTHLY')
+    cyclic_boundary = serializers.DateTimeField(required=True)
+
     class Meta:
         model = Events
-        fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers', 'requirements')
+        fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers', 'requirements',
+                  'frequency', 'cyclic_boundary')
 
     def create(self, validated_data):
         requirements = validated_data.pop('requirements')
+
+        # Those values must be popped because they are still in dictionary Event object could not be made
+        validated_data.pop('frequency')
+        validated_data.pop('cyclic_boundary')
+
         saved_requirements = Requirements.objects.create(requirement_json=json.dumps(requirements))
         validated_data['requirements'] = saved_requirements
         lecturers = validated_data.pop('lecturers')
-        instance = self.Meta.model(**validated_data)
+        instance = self.Meta.model(**validated_data, is_cyclic=self.context['is_cyclic'], root=self.context['root'])
         instance.save()
         instance.lecturers.add(*lecturers)
         return instance

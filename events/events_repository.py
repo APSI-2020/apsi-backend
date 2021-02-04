@@ -10,6 +10,9 @@ class EventsRepository:
     def __init__(self):
         pass
 
+    def find_all_cyclic_events_for_given_root(self, root):
+        return Events.objects.filter(Q(root=root) | Q(pk=root.id)).all()
+
     def find_events_for_given_with_respect_to_filters(self, request, user):
         filters = dict(request.request.GET)
         query = Events.objects
@@ -21,6 +24,8 @@ class EventsRepository:
         price = filters.get('price', None)
         place = filters.get('place', None)
         user_signed_up = filters.get('user_signed_up', None)
+        user_is_assigned_lecturer = filters.get('user_is_assigned_lecturer', None)
+        only_not_cyclical_and_roots = filters.get('only_not_cyclical_and_roots', None)
 
         if price is not None:
             query = query.filter(price__lte=float(price[0]))
@@ -35,6 +40,11 @@ class EventsRepository:
             user_signed_up = user_signed_up[0] == 'true'
             if user_signed_up:
                 query = query.filter(participants=user.id)
+
+        if user_is_assigned_lecturer is not None:
+            user_is_assigned_lecturer = user_is_assigned_lecturer[0] == 'true'
+            if user_is_assigned_lecturer:
+                query = query.filter(lecturers=user.id)
 
         if date_from or date_to:
             if date_from and date_to:
@@ -63,6 +73,9 @@ class EventsRepository:
             time_filter = Q(start__time__lte=now)
             query = query.filter(date_filter & time_filter)
 
+        if only_not_cyclical_and_roots:
+            query = query.filter(root__end__isnull=True)
+
         return query.all()
 
     def get_event_by_id(self, event_id):
@@ -72,3 +85,23 @@ class EventsRepository:
     def save(self, event_to_save):
         event_to_save.save()
         return event_to_save
+
+    def save_list_of_events(self, events_to_save):
+        saved_events = []
+        for event in events_to_save:
+            saved_events.append(event.save())
+
+        return saved_events
+
+    def get_events_for_given_place_and_time_brakcet(self, place_id, start_datetime, end_datetime):
+        place_filter = Q(place_id=place_id)
+
+        # Checking if two ranges overlap is done by this formula:
+        # end1 >= start2 and end2 >= start1 which equals end1 >= start2 and start1 < end2
+
+        first_time_filter = Q(end__gte=start_datetime)
+        second_time_filter = Q(start__lt=end_datetime)
+
+        # it is not returned right away for debugging purposes
+        events = Events.objects.filter(place_filter & first_time_filter & second_time_filter)
+        return events
