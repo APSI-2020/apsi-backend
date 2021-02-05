@@ -140,7 +140,7 @@ class Events(APIView):
                 safe=False)
 
         if frequency == 'ONCE':
-            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False))
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False, user=user))
 
             if serializer.is_valid(raise_exception=True):
                 event_to_save = serializer.save()
@@ -157,7 +157,7 @@ class Events(APIView):
                                     safe=False)
 
             # Creating root
-            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True))
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True, user=user))
             if serializer.is_valid(raise_exception=True):
                 root_event = serializer.save()
 
@@ -174,7 +174,7 @@ class Events(APIView):
                                     safe=False)
             else:
                 serializer = CreateEventSerializer(data=cyclic_events, many=True,
-                                                   context=dict(root=root_event, is_cyclic=True))
+                                                   context=dict(root=root_event, is_cyclic=True, user=user))
 
                 if serializer.is_valid(raise_exception=True):
                     events_to_save = serializer.save()

@@ -45,6 +45,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
     frequency = serializers.CharField(required=False,
                                       help_text='This field should be one of following values: ONCE, DAILY, WEEKLY, MONTHLY')
     cyclic_boundary = serializers.DateTimeField(required=True)
+    lecturers = serializers.ListField(required=False)
 
     class Meta:
         model = Events
@@ -64,6 +65,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
         instance = self.Meta.model(**validated_data, is_cyclic=self.context['is_cyclic'], root=self.context['root'])
         instance.save()
         instance.lecturers.add(*lecturers)
+        instance.lecturers.add(self.context['user'].id)
         return instance
 
 
