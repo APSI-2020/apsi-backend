@@ -73,8 +73,11 @@ class EventsRepository:
             time_filter = Q(start__time__lte=now)
             query = query.filter(date_filter & time_filter)
 
-        if only_not_cyclical_and_roots:
-            query = query.filter(root__end__isnull=True)
+        if only_not_cyclical_and_roots is not None:
+            only_not_cyclical_and_roots = only_not_cyclical_and_roots[0] == 'true'
+
+            if only_not_cyclical_and_roots is True:
+                query = query.filter(root__end__isnull=True)
 
         return query.all()
 
