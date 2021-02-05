@@ -47,6 +47,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
     cyclic_boundary = serializers.DateTimeField(required=True)
     lecturers = serializers.ListField(required=False)
 
+
     class Meta:
         model = Events
         fields = ('name', 'start', 'end', 'limit_of_participants', 'price', 'place', 'lecturers', 'requirements',
@@ -56,8 +57,10 @@ class CreateEventSerializer(serializers.ModelSerializer):
         requirements = validated_data.pop('requirements')
 
         # Those values must be popped because they are still in dictionary Event object could not be made
-        validated_data.pop('frequency')
-        validated_data.pop('cyclic_boundary')
+        if validated_data.__contains__('frequency'):
+            validated_data.pop('frequency')
+        if validated_data.__contains__('cyclic_boundary'):
+            validated_data.pop('cyclic_boundary')
 
         saved_requirements = Requirements.objects.create(requirement_json=json.dumps(requirements))
         validated_data['requirements'] = saved_requirements
