@@ -44,7 +44,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
     # These two fields are not stored in DB
     frequency = serializers.CharField(required=False,
                                       help_text='This field should be one of following values: ONCE, DAILY, WEEKLY, MONTHLY')
-    cyclic_boundary = serializers.DateTimeField(required=True)
+    cyclic_boundary = serializers.DateTimeField(required=False)
     lecturers = serializers.ListField(required=False)
 
 
