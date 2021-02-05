@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from dateutil.parser import parse
 from django.http import FileResponse
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -19,7 +19,6 @@ from events.ticket_pdf_generator import TicketPdfGenerator
 from users.users_service import UsersService
 
 
-
 def is_place_free_in_time_bracket(place_id, start_datetime, end_datetime):
     return PlaceChecker(place_id).check_if_place_available(start_datetime, end_datetime)
 
@@ -28,6 +27,13 @@ def is_start_and_end_in_the_same_day_and_in_right_order(start_datetime, end_date
     start = parse(start_datetime)
     end = parse(end_datetime)
     return start.date() == end.date() and start < end
+
+
+def is_cyclic_boundary_after_event_end(end_datetime, cyclic_boundary):
+    boundary = parse(cyclic_boundary)
+    end = parse(end_datetime)
+
+    return end.date() != boundary.date() and end < boundary
 
 
 def place_is_free_for_cyclic_event(cyclic_events_data):
@@ -85,12 +91,12 @@ class Events(APIView):
                          manual_parameters=[authorization_token, price, date_from, date_to, name_contains, past_events,
                                             place, user_signed_up, user_is_assigned_lecturer,
                                             only_not_cyclical_and_roots])
-
     def get(self, request):
         jwt = request.headers['Authorization']
         user = self.users_service.fetch_by_jwt(jwt)
         events = self.events_repository.find_events_for_given_with_respect_to_filters(self, user)
-        available_events = list(filter(lambda event: self.events_service.does_user_meet_requirements(event, user), events))
+        available_events = list(
+            filter(lambda event: self.events_service.does_user_meet_requirements(event, user), events))
         serializer = EventSerializer(available_events, context=dict(user=user), many=True)
         response = serializer.data
         return JsonResponse(response, safe=False)
@@ -134,7 +140,7 @@ class Events(APIView):
                 safe=False)
 
         if frequency == 'ONCE':
-            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False))
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=False, user=user))
 
             if serializer.is_valid(raise_exception=True):
                 event_to_save = serializer.save()
@@ -143,8 +149,15 @@ class Events(APIView):
             return HttpResponseBadRequest()
 
         else:
+            cyclic_boundary = request.data.get('cyclic_boundary', None)
+
+            if not is_cyclic_boundary_after_event_end(end_datetime, cyclic_boundary):
+                return JsonResponse(data={"error": "Cyclic boundary cant be before events end"},
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                    safe=False)
+
             # Creating root
-            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True))
+            serializer = CreateEventSerializer(data=request.data, context=dict(root=None, is_cyclic=True, user=user))
             if serializer.is_valid(raise_exception=True):
                 root_event = serializer.save()
 
@@ -161,7 +174,7 @@ class Events(APIView):
                                     safe=False)
             else:
                 serializer = CreateEventSerializer(data=cyclic_events, many=True,
-                                                   context=dict(root=root_event, is_cyclic=True))
+                                                   context=dict(root=root_event, is_cyclic=True, user=user))
 
                 if serializer.is_valid(raise_exception=True):
                     events_to_save = serializer.save()
@@ -192,7 +205,8 @@ class Event(APIView):
         user = self.users_service.fetch_by_jwt(jwt)
         event = self.events_repository.get_event_by_id(event_id)
         if not self.events_service.does_user_meet_requirements(event, user):
-            return JsonResponse(dict(error="User does not meet requirements to preview this event"), status=status.HTTP_404_NOT_FOUND, safe=False)
+            return JsonResponse(dict(error="User does not meet requirements to preview this event"),
+                                status=status.HTTP_404_NOT_FOUND, safe=False)
         serializer = EventSerializer(event, context=dict(user=user), many=False)
         response = serializer.data
         return JsonResponse(response, safe=False)
